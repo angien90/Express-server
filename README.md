@@ -9,22 +9,26 @@ Därefter fick vi skapa en GET endpoint som retunerar en lista på blogg poster 
 
 ![image](https://github.com/user-attachments/assets/abba9b3d-76f8-467e-b45f-c3ed9cc39de6)
 
-## Skapa en filtrerings-funktion
+## Skapa en filtrerings-funktion med hjälp av anropet GET
 Därefter fick vi skapa en funktion som filtrerade bloggposter efter författare sker med hjälp av Query string.
 
 ![image](https://github.com/user-attachments/assets/dd1d98c1-036b-4578-99b6-919dc5cc5d01)
 
-## Skapa en sorterings-funktion
+## Skapa en sorterings-funktion med hjälp av anropet GET
 Vi fick även skapa en funktion som sorterade bloggposter efter titlar med hjälp av Query string.
 
 ![image](https://github.com/user-attachments/assets/ef54e4e8-bc92-420f-b9ab-8413ba72f68b)
 ![image](https://github.com/user-attachments/assets/fe446ecd-1833-4c30-9fc4-bc616516f805)
 
-## Skapa en hitta-funktion
+## Skapa en hitta-funktion med hjälp av anropet GET
 Därefter fick vi skapa en funktion som letade upp angivet id med hjälp av Path params.
 
 ![image](https://github.com/user-attachments/assets/961139af-890e-45d5-a1d7-952e7a96d973)
 
+## Skapa en ny Request Collection i Insomnia och lägg till ovan GET anrop
+I inspektor programmet Insomnia skapade vi upp tidigare GEt anrop för att sedan kunna bygga på och testa POST, PATCH och DELETE anrop.
+
+![alt text](image.png)
 
 
 ## För att få igång ett klont repo
