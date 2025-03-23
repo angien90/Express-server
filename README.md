@@ -61,6 +61,16 @@ HTTP Request
 ![8](https://github.com/user-attachments/assets/a65fcdca-c22e-465d-97e3-826c0c9371fb)
 Resultat (Bloggpost 4 är borttagen)
 
+## Refakturera koden du skapar ovan
+Efter det att vi byddge ovan anrop skulle vi refakturera koden så at tden blir mer lättläst. Det skapades alltså en controller och en router mapp under scr där det skapades en loggpostController.ts fil och en bloggpost.ts fil. Den kod som alltså låg i index.ts bröts ut till bloggpostsController.ts och exporterades och importerades till koden i bloggpost.ts.
+
+## Installation av corse
+Därefter installerades corse och cors importerades i index.ts. 
+
+## Errorhantering
+I vår bloggpostsController lade vi även till hantering av errormeddelande med hjälp av try/catch
+
+
 ---
 
 ## För att få igång ett klont repo
