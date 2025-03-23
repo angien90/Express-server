@@ -14,6 +14,7 @@ export const fetchAllPosts = (req: Request, res: Response) => {
     const sort = req.query.sort;
     let filteredPosts = posts;
     
+    try {
     if(filter) {
         filteredPosts = filteredPosts.filter((p) => p.author.includes(filter.toString()))
     }
@@ -43,6 +44,10 @@ export const fetchAllPosts = (req: Request, res: Response) => {
     }
 
     res.json({filteredPosts}) 
+    } catch(error:unknown) {
+        const message = error instanceof Error ? error.message : 'Unknown error'
+        res.status(500).json({error:message})
+        }
     }
 
 // Hitta ID med path params (t.ex. localhost:3000/posts/123)
