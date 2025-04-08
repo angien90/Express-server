@@ -1,23 +1,24 @@
-import { Request, Response } from "express";
+import 'dotenv/config'
 import express from 'express';
-import cors from "cors"
+import cors from 'cors'
+import { connectToDatabase } from './config/db';
+
 const app = express();
 
-// Startsidan
-app.get('/', (_: Request, res: Response) => {
-    res.send('Hello World')
-  })
-  
 // Middleware
-app.use(express.json());
-app.use(cors());
+app.use(express.json()); // This specific middleware parses JSON string to Javascript Object
+app.use(cors());        // This makes the Express server except request from other domains
+
 
 // Routes
-import postsRouter from './routes/bloggposts'
-app.use('/posts', postsRouter)
+import postRouter from './routes/bloggposts'
+app.use('/posts', postRouter)
 
-// Port 3000
+
+// Connect To DB
+connectToDatabase();
+// Start the express server
 const PORT = 3000
 app.listen(PORT, () => {
-    console.log(`Server is running at http://localhost:${PORT}`)
+  console.log(`Server is running at http://localhost:${PORT}`)
 })

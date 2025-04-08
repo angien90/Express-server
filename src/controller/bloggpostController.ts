@@ -1,5 +1,9 @@
 import { Request, Response } from "express";
 import { Posts } from "../models/Posts";
+import { db } from "../config/db";
+import { ResultSetHeader, RowDataPacket } from "mysql2";
+import { IPost } from "../models/IPost";
+
 
 // Bloggposter
 const posts: Posts[] = [
@@ -9,12 +13,12 @@ const posts: Posts[] = [
 ]
 
 // Filtrering av Author (t.ex localhost:3000/posts?filter=Nisse Hult)
-export const fetchAllPosts = (req: Request, res: Response) => {    
+export const fetchAllPosts = async (req: Request, res: Response) => {    
+    /*
     const filter = req.query.filter
     const sort = req.query.sort;
     let filteredPosts = posts;
     
-    try {
     if(filter) {
         filteredPosts = filteredPosts.filter((p) => p.author.includes(filter.toString()))
     }
@@ -41,9 +45,12 @@ export const fetchAllPosts = (req: Request, res: Response) => {
             if (post1 > post2) return -1 // Fasle
             return 0; // Equal
         })
-    }
+    }*/
 
-    res.json({filteredPosts}) 
+    try {
+    // Arbetar med MySQL genom db-variabler
+    const [rows] = await db.query<RowDataPacket[]>('SELECT * FROM posts')
+    res.json({rows}) 
     } catch(error:unknown) {
         const message = error instanceof Error ? error.message : 'Unknown error'
         res.status(500).json({error:message})
@@ -51,28 +58,54 @@ export const fetchAllPosts = (req: Request, res: Response) => {
     }
 
 // Hitta ID med path params (t.ex. localhost:3000/posts/123)
-export const fetchPost = (req: Request, res: Response) => {
+export const fetchPost = async (req: Request, res: Response) => {
     const id = req.params.id
-    const post = posts.find((p) => p.id === parseInt(id))
-
-    res.json({post})
+    
+try {
+    const sql = `
+    SELECT * FROM posts
+    WHERE id = ?
+    `
+const [rows] = await db.query<RowDataPacket[]>(sql, [id])
+const post = rows[0];
+if (!post) {
+    res.status(404).json({message: 'Posts not found'})
+    return;
+}
+res.json(post)
+  } catch(error: unknown) {
+    const message = error  instanceof Error ? error.message : 'Unknown error'
+    res.status(500).json({error: message})
+  }
 }
 
 // Lägg till ett nytt blogginlägg med hjälp av anropet post & Insomnia
-export const createPost = (req: Request, res: Response) => {
+export const createPost = async (req: Request, res: Response) => {
     const titel = req.body.titel;
     const content = req.body.content;
     const author = req.body.author;
 
-    const newPost = new Posts(titel, content, author);
-    posts.push(newPost)
+    if (!titel || !content || !author) {
+        res.status(400).json({ error: 'Titel, content och author krävs' }); 
+        return; 
+    }
 
-    res.status(201).json({message: 'Bloggpost är skapad'})
-}
+    try {
+        const sql = `
+        INSERT INTO posts (titel, content, author)
+        VALUES (?, ?, ?)
+        `
+        const [result] = await db.query<ResultSetHeader>(sql, [titel, content, author])
+        res.status(201).json({message: 'Post created', id: result.insertId})
+        } catch(error: unknown) {
+        const message = error  instanceof Error ? error.message : 'Unknown error'
+        res.status(500).json({error: message})
+      }
+    }
 
 // Ändra en betinlig bloggpost med hjälp av anropet patch
 export const updatePost = (req: Request, res: Response) => {
-    const {titel, content, author} = req.body
+    /* const {titel, content, author} = req.body
 
     if (titel === undefined || content === undefined || author === undefined) {
         res.status(400).json({error: 'Titel, content och author är krävande'})
@@ -88,19 +121,26 @@ export const updatePost = (req: Request, res: Response) => {
     post.titel = titel;
     post.content = content;
     post.author = author;
-    res.status(200).json({message: 'Bloggpost är uppdaterad', data: post})
+    res.status(200).json({message: 'Bloggpost är uppdaterad', data: post})*/
 }
 
 // Ta bort ett befintligt objekt med hjälp av anropet delete
-export const deletePost = (req: Request, res: Response) => {
+export const deletePost = async (req: Request, res: Response) => {
     const id = req.params.id
 
-    const postIndex = posts.findIndex((p) => p.id === parseInt(id))
-    if (postIndex === -1) {
-        res.status(404).json({error: 'Bloggpost kunde inte hittas'})
-        return;
+    try {
+        const sql = `
+          DELETE FROM posts
+          WHERE id = ?
+        `
+        const [result] = await db.query<ResultSetHeader>(sql, [id])
+        if (result.affectedRows === 0) {
+          res.status(404).json({message: 'Post not found'})
+          return;
+        }
+        res.json({message: 'Post deleted'})
+        } catch (error: unknown) {
+        const message = error  instanceof Error ? error.message : 'Unknown error'
+        res.status(500).json({error: message})
     }
-
-    posts.splice(postIndex, 1)
-    res.json({message: 'Bloggpost togs bort'})
 }
