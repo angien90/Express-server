@@ -14,6 +14,9 @@ app.use(cors());        // This makes the Express server except request from oth
 import postRouter from './routes/bloggposts'
 app.use('/posts', postRouter)
 
+import subtaskRouter from './routes/subtasks'
+app.use('/subtasks', subtaskRouter)
+
 
 // Connect To DB
 connectToDatabase();

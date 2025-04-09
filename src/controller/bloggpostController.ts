@@ -1,55 +1,33 @@
 import { Request, Response } from "express";
-import { Posts } from "../models/Posts";
 import { db } from "../config/db";
 import { ResultSetHeader, RowDataPacket } from "mysql2";
 import { IPost } from "../models/IPost";
-
-
-// Bloggposter
-const posts: Posts[] = [
-    new Posts('Bloggpost 1', 'Innehåll 1', 'Nisse Hult'),
-    new Posts('Bloggpost 2', 'Innehåll 2', 'Kalle Anka'),
-    new Posts('Bloggpost 3', 'Innehåll 3', 'Musse Pig'),
-]
+import { IPostDBResponse } from "../models/IPostDBResponse";
 
 // Filtrering av Author (t.ex localhost:3000/posts?filter=Nisse Hult)
 export const fetchAllPosts = async (req: Request, res: Response) => {    
-    /*
-    const filter = req.query.filter
-    const sort = req.query.sort;
-    let filteredPosts = posts;
+    const search = req.query.search
+    const sort = req.query.sort
     
-    if(filter) {
-        filteredPosts = filteredPosts.filter((p) => p.author.includes(filter.toString()))
-    }
-
-    // Sortering av Titel (localhost:3000/posts?sort=asc (minst till störst))
-    if (sort && sort === "asc") {
-        filteredPosts = filteredPosts.sort((a, b) => {
-            const post1 = a.titel.toLowerCase()
-            const post2 = b.titel.toLowerCase()
-
-            if (post1 > post2) return 1 // True
-            if (post1 < post2) return -1 // Fasle
-            return 0; // Equal
-        })
-    }
-
-    // Sortering av Titel (localhost:3000/posts?sort=desc (störst till minst))
-    if (sort && sort === "desc") {
-        filteredPosts = filteredPosts.sort((a, b) => {
-            const post1 = a.titel.toLowerCase()
-            const post2 = b.titel.toLowerCase()
-
-            if (post1 < post2) return 1 // True
-            if (post1 > post2) return -1 // Fasle
-            return 0; // Equal
-        })
-    }*/
+    let sql = 'SELECT * FROM posts';
+    let params: any = [];
+    let searchSQL = "";
+    let sortSQL = "";
 
     try {
-    // Arbetar med MySQL genom db-variabler
-    const [rows] = await db.query<RowDataPacket[]>('SELECT * FROM posts')
+        if (search) {
+            searchSQL
+            searchSQL = " WHERE content LIKE ? ";
+            params = [`%${search}%`]
+        }
+
+        if (sort) {
+            const OrderBy = sort === 'dest' ? 'DEST' : 'ASC'
+            sortSQL = " ORDER BY content " + OrderBy
+        }
+ 
+    sql = sql +searchSQL + sortSQL
+    const [rows] = await db.query<RowDataPacket[]>(sql, params)
     res.json({rows}) 
     } catch(error:unknown) {
         const message = error instanceof Error ? error.message : 'Unknown error'
@@ -63,39 +41,67 @@ export const fetchPost = async (req: Request, res: Response) => {
     
 try {
     const sql = `
-    SELECT * FROM posts
-    WHERE id = ?
+      SELECT 
+        posts.id AS post_id,
+        posts.title AS post_title,
+        posts.content AS post_content,
+        posts.author AS post_author,
+        posts.created_at AS post_created_at,
+        subtasks.id AS subtask_id,
+        subtasks.post_id AS subtask_post_id,
+        subtasks.content AS subtask_content,
+        subtasks.author AS subtask_author,
+        subtasks.created_at AS subtask_created_at
+      FROM posts
+      LEFT JOIN subtasks ON posts.id = subtasks.post_id
+      WHERE posts.id = ?
     `
-const [rows] = await db.query<RowDataPacket[]>(sql, [id])
+
+const [rows] = await db.query<IPostDBResponse[]>(sql, [id])
 const post = rows[0];
 if (!post) {
     res.status(404).json({message: 'Posts not found'})
     return;
 }
-res.json(post)
+res.json(formatPost(rows))
   } catch(error: unknown) {
     const message = error  instanceof Error ? error.message : 'Unknown error'
     res.status(500).json({error: message})
   }
 }
 
+const formatPost = (rows: IPostDBResponse[]) => ({
+    id:         rows[0].post_id,
+    title:      rows[0].post_content,
+    content:    rows[0].post_done,
+    author:     rows[0].post_author,
+    created_at: rows[0].post_created_at,
+    subtasks: rows.map((row) => ({
+        id:        row.subtask_id,
+        post_id:   row.subtask_post_id,
+        content:   row.subtask_content,
+        author:    row.subtask_author,
+        created_at:row.subtask_created_at
+    }))
+  })
+
 // Lägg till ett nytt blogginlägg med hjälp av anropet post & Insomnia
 export const createPost = async (req: Request, res: Response) => {
-    const titel = req.body.titel;
+    const title = req.body.title;
     const content = req.body.content;
     const author = req.body.author;
 
-    if (!titel || !content || !author) {
-        res.status(400).json({ error: 'Titel, content och author krävs' }); 
+    if (!title || !content || !author) {
+        res.status(400).json({ error: 'Title, content och author krävs' }); 
         return; 
     }
 
     try {
         const sql = `
-        INSERT INTO posts (titel, content, author)
+        INSERT INTO posts (title, content, author)
         VALUES (?, ?, ?)
         `
-        const [result] = await db.query<ResultSetHeader>(sql, [titel, content, author])
+        const [result] = await db.query<ResultSetHeader>(sql, [title, content, author])
         res.status(201).json({message: 'Post created', id: result.insertId})
         } catch(error: unknown) {
         const message = error  instanceof Error ? error.message : 'Unknown error'

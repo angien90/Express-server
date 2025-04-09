@@ -1,1 +1,1 @@
-{"root":["../src/index.ts","../src/models/posts.ts"],"version":"5.8.2"}
+{"root":["../src/index.ts","../src/config/db.ts","../src/controller/bloggpostcontroller.ts","../src/controller/subtaskcontroller.ts","../src/models/ipost.ts","../src/models/ipostdbresponse.ts","../src/models/post.ts","../src/routes/bloggposts.ts","../src/routes/subtasks.ts"],"version":"5.8.2"}
